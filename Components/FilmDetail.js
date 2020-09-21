@@ -1,7 +1,6 @@
 // Components/FilmDetail.js
 
 import React from 'react'
-import { connect } from 'react-redux'
 import {
 	StyleSheet,
 	View,
@@ -9,10 +8,12 @@ import {
 	ActivityIndicator,
 	ScrollView,
 	Image,
+	Button,
 } from 'react-native'
 import { getFilmDetailFromApi, getImageFromApi } from '../API/TMDBApi'
 import moment from 'moment'
 import numeral from 'numeral'
+import { connect } from 'react-redux'
 
 class FilmDetail extends React.Component {
 	constructor(props) {
@@ -24,12 +25,19 @@ class FilmDetail extends React.Component {
 	}
 
 	componentDidMount() {
-		getFilmDetailFromApi(this.props.route.params.idFilm).then((data) => {
-			this.setState({
-				film: data,
-				isLoading: false,
-			})
-		})
+		getFilmDetailFromApi(this.props.navigation.state.params.idFilm).then(
+			(data) => {
+				this.setState({
+					film: data,
+					isLoading: false,
+				})
+			}
+		)
+	}
+
+	componentDidUpdate() {
+		console.log('componentDidUpdate : ')
+		console.log(this.props.favoritesFilm)
 	}
 
 	_displayLoading() {
@@ -41,22 +49,12 @@ class FilmDetail extends React.Component {
 			)
 		}
 	}
+
 	_toggleFavorite() {
 		const action = { type: 'TOGGLE_FAVORITE', value: this.state.film }
 		this.props.dispatch(action)
 	}
-	_displayFavoriteImage() {
-		var sourceImage = require('../Images/ic_favorite_border.png')
-		if (
-			this.props.favoritesFilm.findIndex(
-				(item) => item.id === this.state.film.id
-			) !== -1
-		) {
-			// Film dans nos favoris
-			sourceImage = require('../Images/ic_favorite.png')
-		}
-		return <Image style={styles.favorite_image} source={sourceImage} />
-	}
+
 	_displayFilm() {
 		const { film } = this.state
 		if (film != undefined) {
@@ -67,12 +65,7 @@ class FilmDetail extends React.Component {
 						source={{ uri: getImageFromApi(film.backdrop_path) }}
 					/>
 					<Text style={styles.title_text}>{film.title}</Text>
-					<TouchableOpacity
-						style={styles.favorite_container}
-						onPress={() => this._toggleFavorite()}
-					>
-						{this._displayFavoriteImage()}
-					</TouchableOpacity>
+					<Button title="Favoris" onPress={() => this._toggleFavorite()} />
 					<Text style={styles.description_text}>{film.overview}</Text>
 					<Text style={styles.default_text}>
 						Sorti le {moment(new Date(film.release_date)).format('DD/MM/YYYY')}
@@ -135,13 +128,6 @@ const styles = StyleSheet.create({
 		height: 169,
 		margin: 5,
 	},
-	favorite_container: {
-		alignItems: 'center', // Alignement des components enfants sur l'axe secondaire, X ici
-	},
-	favorite_image: {
-		width: 40,
-		height: 40,
-	},
 	title_text: {
 		fontWeight: 'bold',
 		fontSize: 35,
@@ -168,7 +154,9 @@ const styles = StyleSheet.create({
 })
 
 const mapStateToProps = (state) => {
-	return { favoritesFilm: state.favoritesFilm }
+	return {
+		favoritesFilm: state.favoritesFilm,
+	}
 }
 
 export default connect(mapStateToProps)(FilmDetail)
